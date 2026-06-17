@@ -1,0 +1,88 @@
+services:
+  industrial-facility-parameter-bus-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ifpba-api
+    ports:
+      - "8080:8080"
+    environment:
+      MQTT_BROKER_URL: tcp://eclipse-mosquitto:1883
+      MQTT_CLIENT_ID: industrial-facility-parameter-bus-api
+      MQTT_TOPIC: sensors/data
+      MQTT_USERNAME: ""
+      MQTT_PASSWORD: ""
+    depends_on:
+      - eclipse-mosquitto
+    networks:
+      - ifpba-net
+
+  eclipse-mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: ifpba-mqtt
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    networks:
+      - ifpba-net
+
+  test-producer:
+    image: eclipse-mosquitto:2
+    container_name: ifpba-test-producer
+    depends_on:
+      - eclipse-mosquitto
+      - industrial-facility-parameter-bus-api
+    networks:
+      - ifpba-net
+    entrypoint: >
+      sh -c "
+      sleep 5 &&
+      mosquitto_pub
+      -h eclipse-mosquitto
+      -p 1883
+      -t sensors/data
+      -m '{\"A\":\"text\",\"B\":\"text\",\"C\":\"text\",\"some_key\":\"text\"}'
+      "
+
+#  test-producer:
+#    image: alpine:3.22
+#    container_name: ifpba-test-producer
+#    depends_on:
+#      - eclipse-mosquitto
+#      - industrial-facility-parameter-bus-api
+#    networks:
+#      - ifpba-net
+#    command: >
+#      sh -c "
+#      apk add --no-cache mosquitto-clients;
+#
+#      while true
+#      do
+#        TEMP=$$(shuf -i 15-40 -n 1)
+#        PRESSURE=$$(shuf -i 1-20 -n 1)
+#        LOAD=$$(shuf -i 0-100 -n 1)
+#        RPM=$$(shuf -i 500-3000 -n 1)
+#
+#        JSON=$$(printf '{\"temperature\":\"%s\",\"pressure\":\"%s\",\"load\":\"%s\",\"rpm\":\"%s\",\"timestamp\":\"%s\"}' \
+#          \"$$TEMP\" \
+#          \"$$PRESSURE\" \
+#          \"$$LOAD\" \
+#          \"$$RPM\" \
+#          \"$$(date -u +%Y-%m-%dT%H:%M:%SZ)\")
+#
+#        echo \"Publishing: $$JSON\"
+#
+#        mosquitto_pub \
+#          -h eclipse-mosquitto \
+#          -p 1883 \
+#          -t sensors/data \
+#          -m \"$$JSON\"
+#
+#        sleep 300
+#      done
+#      "
+
+networks:
+  ifpba-net:
+    driver: bridge
