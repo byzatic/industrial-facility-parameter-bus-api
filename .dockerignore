@@ -1,0 +1,11 @@
+# Ignore everything by default
+*
+
+# Keep only files needed by Dockerfile
+!pom.xml
+!src/
+!src/**
+
+# Optional: keep Docker metadata visible to builder
+!Dockerfile
+!.dockerignore
