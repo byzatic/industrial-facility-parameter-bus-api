@@ -1,0 +1,53 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-tomilino-data-sequence
+      author: svyatoslav
+      changes:
+        - createSequence:
+            schemaName: public
+            sequenceName: tomilino_data_id_seq
+            startValue: 1
+            incrementBy: 1
+
+  - changeSet:
+      id: 002-create-tomilino-data-table
+      author: svyatoslav
+      changes:
+        - createTable:
+            schemaName: public
+            tableName: tomilino_data
+            columns:
+              - column:
+                  name: id
+                  type: integer
+                  defaultValueSequenceNext: tomilino_data_id_seq
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: tomilino_data_pkey
+
+              - column:
+                  name: timestamp
+                  type: timestamp without time zone
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: reg_name
+                  type: text
+
+              - column:
+                  name: data
+                  type: double precision
+
+  - changeSet:
+      id: 003-create-tomilino-data-timestamp-index
+      author: svyatoslav
+      changes:
+        - createIndex:
+            schemaName: public
+            tableName: tomilino_data
+            indexName: idx_tomilino_data_timestamp
+            columns:
+              - column:
+                  name: timestamp

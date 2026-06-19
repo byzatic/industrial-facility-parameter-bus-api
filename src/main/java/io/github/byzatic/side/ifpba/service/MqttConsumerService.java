@@ -1,9 +1,12 @@
-package io.github.byzatic.side.ifpba;
+package io.github.byzatic.side.ifpba.service;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import io.github.byzatic.side.ifpba.database.DBDataStorageService;
+import io.github.byzatic.side.ifpba.storage.MqttProperties;
+import io.github.byzatic.side.ifpba.storage.ParamStore;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.eclipse.paho.client.mqttv3.*;
@@ -16,16 +19,19 @@ public class MqttConsumerService {
 
     private final MqttProperties properties;
     private final ParamStore paramStore;
+    private final DBDataStorageService tomilinoDataStorageService;
     private final Gson gson = new Gson();
 
     private MqttClient client;
 
     public MqttConsumerService(
             MqttProperties properties,
-            ParamStore paramStore
+            ParamStore paramStore,
+            DBDataStorageService tomilinoDataStorageService
     ) {
         this.properties = properties;
         this.paramStore = paramStore;
+        this.tomilinoDataStorageService = tomilinoDataStorageService;
     }
 
     @PostConstruct
@@ -79,7 +85,9 @@ public class MqttConsumerService {
                     }
 
                     JsonObject root = element.getAsJsonObject();
+
                     paramStore.replaceAllFields(root);
+                    tomilinoDataStorageService.saveMqttPayload(root);
 
                 } catch (JsonSyntaxException e) {
                     System.err.println("Invalid MQTT JSON: " + e.getMessage());
