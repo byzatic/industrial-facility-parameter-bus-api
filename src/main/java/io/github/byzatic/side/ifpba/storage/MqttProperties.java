@@ -1,4 +1,4 @@
-package io.github.byzatic.side.ifpba;
+package io.github.byzatic.side.ifpba.storage;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

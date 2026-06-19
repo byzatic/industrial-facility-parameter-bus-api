@@ -7,13 +7,43 @@ services:
     ports:
       - "8080:8080"
     environment:
+      SERVER_PORT: 8080
+
       MQTT_BROKER_URL: tcp://eclipse-mosquitto:1883
       MQTT_CLIENT_ID: industrial-facility-parameter-bus-api
       MQTT_TOPIC: sensors/data
       MQTT_USERNAME: ""
       MQTT_PASSWORD: ""
+
+      DB_URL: jdbc:postgresql://postgres:5432/tomilino
+      DB_USERNAME: data_storage
+      DB_PASSWORD: data_storage
+
+      LIQUIBASE_ENABLED: "true"
     depends_on:
-      - eclipse-mosquitto
+      postgres:
+        condition: service_healthy
+      eclipse-mosquitto:
+        condition: service_started
+    networks:
+      - ifpba-net
+
+  postgres:
+    image: postgres:16.3
+    container_name: ifpba-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: tomilino
+      POSTGRES_USER: data_storage
+      POSTGRES_PASSWORD: data_storage
+    volumes:
+      - ifpba-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U data_storage -d tomilino"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     networks:
       - ifpba-net
 
@@ -45,12 +75,40 @@ services:
             -h eclipse-mosquitto \
             -p 1883 \
             -t sensors/data \
-            -m '{"pump_station_1":{"inlet_pressure":2.41,"outlet_pressure":5.87,"flow_rate_m3h":128.6},"water_treatment_1":{"osmosis_status":1.0,"conductivity":412.5},"power_unit_1":{"active_power_kw":12.7,"frequency_hz":50.0}}'
+            -m "{\"pump_station_1\":{\"inlet_pressure\":2.$(od -An -N1 -tu1 /dev/urandom | tr -d ' '),\"outlet_pressure\":5.$(od -An -N1 -tu1 /dev/urandom | tr -d ' '),\"flow_rate_m3h\":1$(od -An -N1 -tu1 /dev/urandom | tr -d ' ')},\"water_treatment_1\":{\"osmosis_status\":1.0,\"conductivity\":4$(od -An -N1 -tu1 /dev/urandom | tr -d ' ')},\"power_unit_1\":{\"active_power_kw\":12.$(od -An -N1 -tu1 /dev/urandom | tr -d ' '),\"frequency_hz\":50.$(od -An -N1 -tu1 /dev/urandom | tr -d ' ')}}"
   
           echo "published"
   
-          sleep 300
+          sleep 5
         done
+
+#  test-producer:
+#    image: eclipse-mosquitto:2
+#    container_name: ifpba-test-producer
+#    depends_on:
+#      - eclipse-mosquitto
+#    networks:
+#      - ifpba-net
+#    command:
+#      - sh
+#      - -c
+#      - |
+#        sleep 5
+#
+#        while true; do
+#          mosquitto_pub \
+#            -h eclipse-mosquitto \
+#            -p 1883 \
+#            -t sensors/data \
+#            -m '{"pump_station_1":{"inlet_pressure":2.41,"outlet_pressure":5.87,"flow_rate_m3h":128.6},"water_treatment_1":{"osmosis_status":1.0,"conductivity":412.5},"power_unit_1":{"active_power_kw":12.7,"frequency_hz":50.0}}'
+#
+#          echo "published"
+#
+#          sleep 300
+#        done
+
+volumes:
+  ifpba-postgres-data:
 
 networks:
   ifpba-net:

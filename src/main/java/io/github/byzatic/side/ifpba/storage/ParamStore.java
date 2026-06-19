@@ -1,4 +1,4 @@
-package io.github.byzatic.side.ifpba;
+package io.github.byzatic.side.ifpba.storage;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
