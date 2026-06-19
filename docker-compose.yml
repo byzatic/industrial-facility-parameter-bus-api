@@ -35,53 +35,75 @@ services:
       - industrial-facility-parameter-bus-api
     networks:
       - ifpba-net
-    entrypoint: >
-      sh -c "
-      sleep 5 &&
-      mosquitto_pub
-      -h eclipse-mosquitto
-      -p 1883
-      -t sensors/data
-      -m '{\"A\":\"text\",\"B\":\"text\",\"C\":\"text\",\"some_key\":\"text\"}'
-      "
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      sleep 5
 
-#  test-producer:
-#    image: alpine:3.22
-#    container_name: ifpba-test-producer
-#    depends_on:
-#      - eclipse-mosquitto
-#      - industrial-facility-parameter-bus-api
-#    networks:
-#      - ifpba-net
-#    command: >
-#      sh -c "
-#      apk add --no-cache mosquitto-clients;
-#
-#      while true
-#      do
-#        TEMP=$$(shuf -i 15-40 -n 1)
-#        PRESSURE=$$(shuf -i 1-20 -n 1)
-#        LOAD=$$(shuf -i 0-100 -n 1)
-#        RPM=$$(shuf -i 500-3000 -n 1)
-#
-#        JSON=$$(printf '{\"temperature\":\"%s\",\"pressure\":\"%s\",\"load\":\"%s\",\"rpm\":\"%s\",\"timestamp\":\"%s\"}' \
-#          \"$$TEMP\" \
-#          \"$$PRESSURE\" \
-#          \"$$LOAD\" \
-#          \"$$RPM\" \
-#          \"$$(date -u +%Y-%m-%dT%H:%M:%SZ)\")
-#
-#        echo \"Publishing: $$JSON\"
-#
-#        mosquitto_pub \
-#          -h eclipse-mosquitto \
-#          -p 1883 \
-#          -t sensors/data \
-#          -m \"$$JSON\"
-#
-#        sleep 300
-#      done
-#      "
+      while true
+      do
+        JSON='{
+          "pump_station_1": {
+            "inlet_pressure": 2.41,
+            "outlet_pressure": 5.87,
+            "flow_rate_m3h": 128.6,
+            "tank_level": 74.2,
+            "pump_1_freq": 42.5,
+            "pump_1_current": 31.8,
+            "pump_2_freq": 0.0,
+            "pump_2_current": 0.0,
+            "bearing_temp": 58.4,
+            "vibration_rms": 3.2
+          },
+          "water_treatment_1": {
+            "osmosis_status": 1.0,
+            "filter_status": 1.0,
+            "pressure_before_filter": 3.15,
+            "pressure_after_filter": 2.74,
+            "permeate_pressure": 0.62,
+            "concentrate_pressure": 7.91,
+            "conductivity": 412.5,
+            "water_temp": 21.7,
+            "chlorine_level": 0.34
+          },
+          "pipeline_segment_1": {
+            "pressure_start": 5.81,
+            "pressure_end": 5.27,
+            "delta_pressure": 0.54,
+            "flow_balance": 1.8,
+            "valve_1_position": 100.0,
+            "valve_2_position": 0.0,
+            "leakage_index": 0.02,
+            "temperature_delta": 0.6
+          },
+          "power_unit_1": {
+            "voltage_l1": 228.4,
+            "voltage_l2": 229.1,
+            "voltage_l3": 227.8,
+            "current_l1": 18.6,
+            "current_l2": 19.2,
+            "current_l3": 18.9,
+            "active_power_kw": 12.7,
+            "frequency_hz": 50.0
+          },
+          "quality_monitor_1": {
+            "missing_count_percent": 0.4,
+            "time_desync_ms": 42.0,
+            "crc_error_percent": 0.1,
+            "sensor_fault_count": 0.0,
+            "last_update_age_sec": 2.0
+          }
+        }'
+
+        echo "Publishing industrial facility payload"
+
+        mosquitto_pub \
+          -h eclipse-mosquitto \
+          -p 1883 \
+          -t sensors/data \
+          -m "$$JSON"
+
+        sleep 300
+      done
 
 networks:
   ifpba-net:
