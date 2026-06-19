@@ -10,7 +10,7 @@
     </parent>
     <groupId>io.github.byzatic</groupId>
     <artifactId>industrial-facility-parameter-bus-api</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.2</version>
     <name>industrial-facility-parameter-bus-api</name>
     <description>industrial-facility-parameter-bus-api</description>
     <url/>
