@@ -32,56 +32,25 @@ services:
     container_name: ifpba-test-producer
     depends_on:
       - eclipse-mosquitto
-      - industrial-facility-parameter-bus-api
     networks:
       - ifpba-net
-    entrypoint: >
-      sh -c "
-      sleep 5 &&
-      mosquitto_pub
-      -h eclipse-mosquitto
-      -p 1883
-      -t sensors/data
-      -m '{\"A\":\"text\",\"B\":\"text\",\"C\":\"text\",\"some_key\":\"text\"}'
-      "
-
-#  test-producer:
-#    image: alpine:3.22
-#    container_name: ifpba-test-producer
-#    depends_on:
-#      - eclipse-mosquitto
-#      - industrial-facility-parameter-bus-api
-#    networks:
-#      - ifpba-net
-#    command: >
-#      sh -c "
-#      apk add --no-cache mosquitto-clients;
-#
-#      while true
-#      do
-#        TEMP=$$(shuf -i 15-40 -n 1)
-#        PRESSURE=$$(shuf -i 1-20 -n 1)
-#        LOAD=$$(shuf -i 0-100 -n 1)
-#        RPM=$$(shuf -i 500-3000 -n 1)
-#
-#        JSON=$$(printf '{\"temperature\":\"%s\",\"pressure\":\"%s\",\"load\":\"%s\",\"rpm\":\"%s\",\"timestamp\":\"%s\"}' \
-#          \"$$TEMP\" \
-#          \"$$PRESSURE\" \
-#          \"$$LOAD\" \
-#          \"$$RPM\" \
-#          \"$$(date -u +%Y-%m-%dT%H:%M:%SZ)\")
-#
-#        echo \"Publishing: $$JSON\"
-#
-#        mosquitto_pub \
-#          -h eclipse-mosquitto \
-#          -p 1883 \
-#          -t sensors/data \
-#          -m \"$$JSON\"
-#
-#        sleep 300
-#      done
-#      "
+    command:
+      - sh
+      - -c
+      - |
+        sleep 5
+  
+        while true; do
+          mosquitto_pub \
+            -h eclipse-mosquitto \
+            -p 1883 \
+            -t sensors/data \
+            -m '{"pump_station_1":{"inlet_pressure":2.41,"outlet_pressure":5.87,"flow_rate_m3h":128.6},"water_treatment_1":{"osmosis_status":1.0,"conductivity":412.5},"power_unit_1":{"active_power_kw":12.7,"frequency_hz":50.0}}'
+  
+          echo "published"
+  
+          sleep 300
+        done
 
 networks:
   ifpba-net:

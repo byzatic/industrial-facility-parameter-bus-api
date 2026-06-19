@@ -4,39 +4,58 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class ParamStore {
 
-    private final ConcurrentHashMap<String, JsonElement> params = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, JsonObject> devices = new ConcurrentHashMap<>();
 
     public void replaceAllFields(JsonObject root) {
         if (root == null) {
             throw new IllegalArgumentException("MQTT payload must be JSON object");
         }
 
-        ConcurrentHashMap<String, JsonElement> newParams = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, JsonObject> newDevices = new ConcurrentHashMap<>();
 
-        root.entrySet().forEach(entry ->
-                newParams.put(entry.getKey(), entry.getValue())
-        );
+        root.entrySet().forEach(entry -> {
+            if (entry.getValue() != null && entry.getValue().isJsonObject()) {
+                newDevices.put(entry.getKey(), entry.getValue().getAsJsonObject());
+            }
+        });
 
-        params.clear();
-        params.putAll(newParams);
+        devices.clear();
+        devices.putAll(newDevices);
     }
 
-    public List<String> getKeys() {
-        List<String> keys = new ArrayList<>(params.keySet());
-        Collections.sort(keys);
-        return keys;
+    public List<String> getDeviceNames() {
+        List<String> result = new ArrayList<>(devices.keySet());
+        Collections.sort(result);
+        return result;
     }
 
-    public Optional<JsonElement> getValue(String key) {
-        return Optional.ofNullable(params.get(key));
+    public Optional<JsonObject> getDevice(String deviceId) {
+        return Optional.ofNullable(devices.get(deviceId));
+    }
+
+    public List<String> getRegisterNames(String deviceId) {
+        JsonObject device = devices.get(deviceId);
+        if (device == null) {
+            return List.of();
+        }
+
+        List<String> result = new ArrayList<>(device.keySet());
+        Collections.sort(result);
+        return result;
+    }
+
+    public Optional<JsonElement> getRegisterValue(String deviceId, String registerId) {
+        JsonObject device = devices.get(deviceId);
+        if (device == null) {
+            return Optional.empty();
+        }
+
+        return Optional.ofNullable(device.get(registerId));
     }
 }
